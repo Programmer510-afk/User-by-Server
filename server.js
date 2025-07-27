@@ -1,7 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { google } = require('googleapis');
-const creds = require('./google-credentials.json');
 const cors = require('cors');
 
 const app = express();
@@ -12,12 +11,18 @@ app.use(bodyParser.json());
 app.use(express.static('public')); // public ফোল্ডার থেকে ফাইল সার্ভ করবে
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+
+// Environment থেকে credentials নিয়ে JSON parse করছি
+const creds = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+
 const auth = new google.auth.GoogleAuth({
   credentials: creds,
   scopes: SCOPES,
 });
+
 const sheets = google.sheets({ version: 'v4', auth });
 
+// আপনার স্প্রেডশিট আইডি দিন এখানে
 const SPREADSHEET_ID = '1Ztj5WHUorKyU7d3Xi1UDdEmHvDanLUhs7hO8zzkcxrM';
 
 app.post('/submit-email', async (req, res) => {
@@ -28,7 +33,7 @@ app.post('/submit-email', async (req, res) => {
   }
 
   try {
-    // নতুন শিট যোগ করার চেষ্টা
+    // নতুন শীট যোগ করার চেষ্টা
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: SPREADSHEET_ID,
       requestBody: {
@@ -44,7 +49,7 @@ app.post('/submit-email', async (req, res) => {
       },
     });
 
-    // A1 সেলে ইমেইল লেখার কাজ
+    // A1 সেলে ইমেইল লেখা
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: `${email}!A1`,
@@ -56,6 +61,7 @@ app.post('/submit-email', async (req, res) => {
 
     res.status(200).json({ message: 'Email saved to sheet successfully!' });
   } catch (error) {
+    // যদি শীটের নাম ডুপ্লিকেট হয়
     if (error.errors && error.errors[0].reason === 'duplicate') {
       return res.status(400).json({ error: 'Sheet already exists for this email' });
     }
