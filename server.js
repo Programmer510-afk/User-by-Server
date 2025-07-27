@@ -18,41 +18,42 @@ const auth = new google.auth.GoogleAuth({
 });
 const sheets = google.sheets({ version: 'v4', auth });
 
-const SPREADSHEET_ID = 'আপনার গুগল শিট আইডি এখানে দিন';
+const SPREADSHEET_ID = '1Ztj5WHUorKyU7d3Xi1UDdEmHvDanLUhs7hO8zzkcxrM';
 
 app.post('/submit-email', async (req, res) => {
   const email = req.body.email;
-  
+
   if (!email || typeof email !== 'string') {
     return res.status(400).json({ error: 'Invalid email' });
   }
-  
+
   try {
+    // নতুন শিট যোগ করার চেষ্টা
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: SPREADSHEET_ID,
       requestBody: {
         requests: [
-        {
-          addSheet: {
-            properties: {
-              title: email,
+          {
+            addSheet: {
+              properties: {
+                title: email,
+              },
             },
           },
-        }, ],
+        ],
       },
     });
-    
+
+    // A1 সেলে ইমেইল লেখার কাজ
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: `${email}!A1`,
       valueInputOption: 'RAW',
       requestBody: {
-        values: [
-          [email]
-        ],
+        values: [[email]],
       },
     });
-    
+
     res.status(200).json({ message: 'Email saved to sheet successfully!' });
   } catch (error) {
     if (error.errors && error.errors[0].reason === 'duplicate') {
