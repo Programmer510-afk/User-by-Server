@@ -25,6 +25,12 @@ const sheets = google.sheets({ version: 'v4', auth });
 // আপনার স্প্রেডশিট আইডি দিন এখানে
 const SPREADSHEET_ID = '1Ztj5WHUorKyU7d3Xi1UDdEmHvDanLUhs7hO8zzkcxrM';
 
+// ✅ Sheet name sanitize করার ফাংশন
+function sanitizeSheetName(email) {
+  // শীটের নাম হিসেবে যেসব ক্যারেক্টার অনুমোদিত না সেগুলো "_" দিয়ে বদলানো হচ্ছে
+  return email.replace(/[^a-zA-Z0-9]/g, "_");
+}
+
 app.post('/submit-email', async (req, res) => {
   const email = req.body.email;
 
@@ -32,8 +38,11 @@ app.post('/submit-email', async (req, res) => {
     return res.status(400).json({ error: 'Invalid email' });
   }
 
+  // ✅ sanitized version ব্যবহার sheet name হিসেবে
+  const sheetName = sanitizeSheetName(email);
+
   try {
-    // নতুন শীট যোগ করার চেষ্টা
+    // নতুন শীট যোগ করার চেষ্টা (sanitize করা নাম দিয়ে)
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: SPREADSHEET_ID,
       requestBody: {
@@ -41,7 +50,7 @@ app.post('/submit-email', async (req, res) => {
           {
             addSheet: {
               properties: {
-                title: email,
+                title: sheetName,
               },
             },
           },
@@ -49,10 +58,10 @@ app.post('/submit-email', async (req, res) => {
       },
     });
 
-    // A1 সেলে ইমেইল লেখা
+    // A1 সেলে আসল email লেখা (sanitize করা না)
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${email}!A1`,
+      range: `${sheetName}!A1`,
       valueInputOption: 'RAW',
       requestBody: {
         values: [[email]],
