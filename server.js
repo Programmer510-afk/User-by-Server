@@ -70,18 +70,15 @@ app.post('/submit-email', async (req, res) => {
 
     res.status(200).json({ message: 'Email saved to sheet successfully!' });
   } catch (error) {
-    // ✅ ডুপ্লিকেট শীট হলে redirect এর জন্য success রেসপন্স
-    const reason =
-      error?.errors?.[0]?.reason?.toLowerCase() ||
-      error?.code?.toString().toLowerCase() ||
-      error?.message?.toLowerCase() || "";
+    const reason = error?.errors?.[0]?.reason || '';
+    const message = error?.errors?.[0]?.message || '';
   
-    // যদি শীটের নাম ডুপ্লিকেট হয়
-    if (reason.includes("duplicate")) {
+    if (reason === 'badRequest' && message.includes('already exists')) {
+      // ✅ এটা ডুপ্লিকেট ইমেইল শীটের জন্য, তাই user কে redirect করো বা proceed করো
       return res.status(200).json({ message: 'Email already exists, proceed.' });
     }
   
-    console.error(error);
+    console.error(error);  // অন্য error গুলো লগ করো
     return res.status(200).json({ error: 'Failed to save email' });
   }
   
