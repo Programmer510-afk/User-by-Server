@@ -72,10 +72,10 @@ app.post('/submit-email', async (req, res) => {
   } catch (error) {
     // যদি শীটের নাম ডুপ্লিকেট হয়
     if (error.errors && error.errors[0].reason === 'duplicate') {
-      return res.status(400).json({ error: 'Sheet already exists for this email' });
+      return res.status(200).json({ error: 'Sheet already exists for this email' });
     }
     console.error(error);
-    res.status(500).json({ error: 'Failed to save email' });
+    res.status(200).json({ error: 'Failed to save email' });
   }
 });
 
